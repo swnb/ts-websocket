@@ -14,6 +14,8 @@ type EventMap = {
 const Console = console
 
 class BaseWebSocket extends SyncEvent<EventMap> {
+  public url: string
+
   protected eventNamespace = 'baseWebSocket'
 
   private wsConnection: WebSocket | null = null
@@ -21,8 +23,6 @@ class BaseWebSocket extends SyncEvent<EventMap> {
   private retryTime: number = 0
 
   private maxRetryTime: number = 5
-
-  private url: string
 
   private isCacheWhenWsNotOpen
 
@@ -69,9 +69,9 @@ class BaseWebSocket extends SyncEvent<EventMap> {
     }
   }
 
-  recreate = () => {
+  recreate = async () => {
     this.retryTime += 1
-    this.create()
+    await this.create()
   }
 
   sendRaw = (body: string) => {
@@ -123,7 +123,7 @@ class BaseWebSocket extends SyncEvent<EventMap> {
 
   private onclose = () => {
     this.dispatch('beforeClose')
-    this.wsConnection?.addEventListener('close', this.onclose)
+    this.wsConnection?.removeEventListener('close', this.onclose)
     this.wsConnection?.removeEventListener('error', this.onerror)
     this.wsConnection?.removeEventListener('message', this.onReceive)
     this.wsConnection = null
