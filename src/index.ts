@@ -36,6 +36,10 @@ class BaseWebSocket extends SyncEvent<EventMap> {
     this.isCacheWhenWsNotOpen = isCacheWhenWsNotOpen
   }
 
+  setURL = (url: string) => {
+    this.url = url
+  }
+
   create = async () => {
     if (this.isCreating) {
       Console.warn('another websocket is running right now')
