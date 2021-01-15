@@ -2,27 +2,24 @@ import { SyncEvent } from '@swnb/event'
 
 type VoidFnWithSingleArg<T> = (arg: T) => void
 
-type EventMap = {
+type EventMap<MessageReceived> = {
   open: VoidFunction // 链接打开
-  receiveMessage: VoidFnWithSingleArg<any>
-  send: VoidFnWithSingleArg<any> // 开始发送数据
-  failure: VoidFunction // 此时的链接已经不可用
+  createFailure: VoidFunction // 创建失败
+  receiveMessage: VoidFnWithSingleArg<MessageReceived> // 接受的消息
+  receiveRawMessage: VoidFnWithSingleArg<string> // 接受的 raw 消息
+  send: VoidFnWithSingleArg<string> // 开始发送数据
   beforeClose: VoidFunction // 关闭前触发
   close: VoidFunction // 关闭
 }
 
 const Console = console
 
-class BaseWebSocket extends SyncEvent<EventMap> {
+class BaseWebSocket<MessageReceived = any> extends SyncEvent<EventMap<MessageReceived>> {
   public url: string
 
   protected eventNamespace = 'baseWebSocket'
 
   private wsConnection: WebSocket | null = null
-
-  private retryTime: number = 0
-
-  private maxRetryTime: number = 5
 
   private isCacheWhenWsNotOpen
 
@@ -49,28 +46,19 @@ class BaseWebSocket extends SyncEvent<EventMap> {
     // 开始关闭之前的 websocket,清理回调函数
     this.close()
     try {
-      this.wsConnection = await newWebSocket(this.url)
-      this.retryTime = 1
-      this.wsConnection.addEventListener('message', this.onmessage)
-      this.wsConnection.addEventListener('error', this.onerror)
-      this.wsConnection.addEventListener('close', this.onclose)
+      const wsConnection = await newWebSocket(this.url)
+      wsConnection.addEventListener('message', this.onmessage)
+      wsConnection.addEventListener('error', this.onerror)
+      wsConnection.addEventListener('close', this.onclose)
+      this.wsConnection = wsConnection
       this.dispatch('open')
       this.flush()
-    } catch (error) {
-      // 当连接次数过多时候，放弃连接
-      if (this.retryTime >= this.maxRetryTime) {
-        this.dispatch('failure')
-        Console.error(`connect to server failure , try to connect server again after one second`)
-      } else {
-        setTimeout(this.recreate, 1000)
-      }
     } finally {
       this.isCreating = false
     }
   }
 
   recreate = async () => {
-    this.retryTime += 1
     await this.create()
   }
 
@@ -90,7 +78,7 @@ class BaseWebSocket extends SyncEvent<EventMap> {
       if (this.isCacheWhenWsNotOpen) {
         this.cacheQueue.push(body)
       }
-      this.recreate()
+      throw error
     }
   }
 
@@ -118,14 +106,18 @@ class BaseWebSocket extends SyncEvent<EventMap> {
   }
 
   close = () => {
-    this.wsConnection?.close()
+    if (!this.wsConnection) return
+    // 被关闭的情况下，不需要 ws 触发事件
+    const previousWsConnection = this.wsConnection
+    this.onclose()
+    previousWsConnection?.close()
   }
 
   private onclose = () => {
     this.dispatch('beforeClose')
     this.wsConnection?.removeEventListener('close', this.onclose)
     this.wsConnection?.removeEventListener('error', this.onerror)
-    this.wsConnection?.removeEventListener('message', this.onReceive)
+    this.wsConnection?.removeEventListener('message', this.onmessage)
     this.wsConnection = null
     this.dispatch('close')
   }
@@ -135,45 +127,45 @@ class BaseWebSocket extends SyncEvent<EventMap> {
       Console.warn(`websocket receive undefine message from remote`)
       return
     }
-    try {
-      // TODO 可以考虑优化
-      // 解决粘包的问题
-      if (messageRaw.includes('\n')) {
-        messageRaw.split('\n').forEach(messageRawV => {
-          const message = JSON.parse(messageRawV)
-          this.onReceive(message)
-        })
-        return
+
+    // 解决粘包的问题
+    messageRaw.split('\n').forEach(messageRawV => {
+      try {
+        const message = JSON.parse(messageRawV)
+        this.dispatch('receiveMessage', message)
+      } catch {
+        this.dispatch('receiveRawMessage', messageRawV)
       }
-      const message = JSON.parse(messageRaw)
-      this.onReceive(message)
-    } catch (err) {
-      Console.error(
-        `can't parse ws message from remote with err : ${err} , message : ${messageRaw}`,
-      )
-    }
+    })
   }
 
   private onerror = () => {
-    this.recreate()
-  }
-
-  private onReceive = (data: any) => {
-    this.dispatch('receiveMessage', data)
+    this.close()
   }
 }
 
 function newWebSocket(url: string): Promise<WebSocket> {
   return new Promise((res, rej) => {
     const ws = new WebSocket(url)
-    ws.onopen = () => {
+
+    const clear = () => {
       ws.onopen = null
       ws.onerror = null
+      ws.onclose = null
+    }
+
+    ws.onopen = () => {
+      clear()
       res(ws)
     }
+
+    ws.onclose = () => {
+      clear()
+      rej()
+    }
+
     ws.onerror = () => {
-      ws.onerror = null
-      ws.onopen = null
+      clear()
       rej()
     }
   })
