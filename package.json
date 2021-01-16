@@ -3,6 +3,9 @@
   "version": "0.2.0",
   "description": "websocket module",
   "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc --build tsconfig.json",
     "prepublishOnly": "npm run build",
