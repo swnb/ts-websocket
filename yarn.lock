@@ -263,10 +263,10 @@
     remark "^13.0.0"
     unist-util-find-all-after "^3.0.2"
 
-"@swnb/event@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.npm.taobao.org/@swnb/event/download/@swnb/event-0.1.0.tgz#fe6cd515ffc72add652731dea6645139daf6287a"
-  integrity sha1-/mzVFf/HKt1lJzHepmRROdr2KHo=
+"@swnb/event@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.npmjs.org/@swnb/event/-/event-0.1.1.tgz#d28fc4aeaa42d34d41004885315e768da51e1a21"
+  integrity sha512-m7UaR+RomiCPmgVnujPM16vEz884B+ywpyU/b1K++XFw8BkPEe7kFHn6BJpEuNTERUF6hnsbrhZ/yQgLnuMIsg==
 
 "@swnb/fabric@^0.4.1":
   version "0.4.1"
