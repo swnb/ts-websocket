@@ -263,10 +263,10 @@
     remark "^13.0.0"
     unist-util-find-all-after "^3.0.2"
 
-"@swnb/event@^0.1.1":
-  version "0.1.1"
-  resolved "https://registry.npmjs.org/@swnb/event/-/event-0.1.1.tgz#d28fc4aeaa42d34d41004885315e768da51e1a21"
-  integrity sha512-m7UaR+RomiCPmgVnujPM16vEz884B+ywpyU/b1K++XFw8BkPEe7kFHn6BJpEuNTERUF6hnsbrhZ/yQgLnuMIsg==
+"@swnb/event@^0.2.2":
+  version "0.2.2"
+  resolved "https://registry.npmjs.org/@swnb/event/-/event-0.2.2.tgz#9e545bcf65629ed026df64c6c5b5a4628e7dc958"
+  integrity sha512-96jNodv9RulxhPpZftErkFEgu16MZQ4FCMB4XhQ4rcwU/p84b9B8sOjJtYjw/uzCe7glDU/zhAU9gFuO/O03Mg==
 
 "@swnb/fabric@^0.4.1":
   version "0.4.1"
